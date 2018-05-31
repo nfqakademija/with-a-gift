@@ -20,31 +20,20 @@ class GiftListRepository extends ServiceEntityRepository
         parent::__construct($registry, GiftList::class);
     }
 
-    public function findByUuidUser($value)
+    /**
+     * @param int $count
+     * @return GiftList[]
+     */
+    public function getPublicGiftLists(int $count)
     {
-
-        return $this->createQueryBuilder('g')
-            ->innerJoin(Gift::class, 'gi', 'WITH', 'gi.userId = g.id')
-            ->select('gi', 'g')
-            ->andWhere('g.uuid = :uuid')
-            ->setParameter('uuid', $value)
+        return $this->createQueryBuilder('gl')
+            ->where('gl.isPublic = 1')
+            ->orderBy('RAND()')
+            ->setMaxResults($count)
             ->getQuery()
             ->getResult()
             ;
-
-        //var_dump($t);
     }
 
 
-    /*
-    public function findOneBySomeField($value): ?GiftList
-    {
-        return $this->createQueryBuilder('g')
-            ->andWhere('g.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
 }

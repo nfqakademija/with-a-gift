@@ -8,63 +8,81 @@
 {% block javascripts %}
     {{ parent() }}
     <script>
+      let $collectionHolder;
+      // setup an "add an email" link
+      let $addTagLink = $('<a href="#" class="btn bg-dark btn-xl btn-block border-dark add_email_link">Add an Email</a><br />');
+      let $newLinkLi = $('<li></li>').append($addTagLink);
       $(document).ready(function () {
         console.log("All resources finished loading");
-
-        let counter = 0;
-        // add click handler to "Add" button
-        $('#addButton').click(function () {
-          addEmail($('.newEmail'), counter++, $('#emailList'));
+        // Get the ul that holds the collection of emails
+        $collectionHolder = $('ul.emails');
+        // add a delete link to all of the existing email form li elements
+        $collectionHolder.find('li').each(function () {
+          addTagFormDeleteLink($(this));
         });
-
-
-        function addEmail(emailItem, counter, emailList) {
-          console.log(emailList, counter);
-
-          const emailVal = emailItem.val().trim();
-
-          if (!emailVal) {
-            return;
-          }
-
-          $('div#emailList').append(`<div class="input-group mb-3" id="emailItem${counter}">\n` +
-            `<input type="text" class="form-control" value="${escapeHtml(emailVal)}" />\n` +
-            '<div class="input-group-append">\n' +
-            `<button type="button" class="btn btn-xl bg-danger border-danger" id="deleteButton${counter}">\n` +
-            '<i class="fa fa-times mr-2"></i>\n' +
-            '</button>\n' +
-            '</div>\n' +
-            '</div>');
-
-          console.log(`emailItem${counter}`);
-
-          emailItem.val('').focus();
-
-            {# remove emailItem element #}
-          $(`#deleteButton${counter}`).click(function () {
-            $(`#emailItem${counter}`).remove();
-          });
-
-        }
-
-        function escapeHtml(string) {
-          return (string.replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;"));
-        }
-
-        $('#copyToClipboard').click(function () {
-          let copyLink = document.getElementById("link");
-          copyLink.select();
-          document.execCommand("copy");
+        // add the "add an email" anchor and li to the emails ul
+        $collectionHolder.prepend($newLinkLi);
+        // count the current form inputs we have (e.g. 2), use that as the new
+        // index when inserting a new item (e.g. 2)
+        let lastIndex = parseInt($collectionHolder.find(':input:first').prop('name') ?
+          $collectionHolder.find(':input:first').prop('name').replace(/[^0-9]+/, '') : 0
+        );
+        $collectionHolder.data('index', ++lastIndex); // data( key, value )
+        $addTagLink.on('click', function (e) {
+          // prevent the link from creating a "#" on the URL
+          e.preventDefault();
+          // add a new tag form (see next code block)
+          addTagForm($collectionHolder, $newLinkLi);
         });
-
-        // initialize popovers
-        $('[data-toggle="popover"]').popover();
-
       });
+
+      function addTagForm($collectionHolder, $newLinkLi) {
+        // Get the data-prototype explained earlier
+        let prototype = $collectionHolder.data('prototype');
+        // get the new index
+        let index = $collectionHolder.data('index');
+        let newForm = prototype;
+        // Need this because we set 'label' => false in EmailsType
+        // Replace '__name__' in the prototype's HTML to
+        // instead be a number based on how many items we have
+        newForm = newForm.replace(/__name__/g, index);
+        // increase the index with one for the next item
+        $collectionHolder.data('index', index + 1);
+        // create form input from prototype (inside our <div>)
+        let $newForm = $('<div class="input-group"></div>').prepend(newForm);
+        // Display the form in the page in an li, before the "Add an email" link li
+        let $newFormLi = $('<li class="form-group"></li>').prepend($newForm);
+        $newLinkLi.after($newFormLi);
+        // add a delete link to the new form
+        addTagFormDeleteLink($newFormLi);
+      }
+
+      function addTagFormDeleteLink($tagFormLi) {
+        let $removeFormA = $('<div class="input-group-append">\n' +
+          '<button class="btn btn-danger btn-xl delete-button" type="button"><i class="fa fa-times"></i></button>\n' +
+          '</div>');
+        $tagFormLi.find('.input-group').append($removeFormA);
+        $removeFormA.on('click', function (e) {
+          // prevent the link from creating a "#" on the URL
+          e.preventDefault();
+          // remove the li for the email form
+          $tagFormLi.remove();
+        });
+      }
+
+      $('#copyToClipboard').click(function () {
+        let copyLink = document.getElementById("emails_url");
+        copyLink.select();
+        document.execCommand("copy");
+      });
+      // initialize popovers
+      $('[data-toggle="popover"]').popover();
+
+      {% if app.request.get('open_share') %}
+      $(document).ready(function () {
+        $('#modal').modal('show');
+      });
+      {% endif %}
 
     </script>
 
@@ -76,9 +94,11 @@
         <section id="services">
             <div class="container">
                 <div class="row">
-                    <div class="col-lg-12 text-center mb-5">
+                    <div class="col-lg-12 text-center mb-3">
                         <h2 class="section-heading text-uppercase">{{ data.firstname }} Gift List</h2>
-                        {#<h3 class="section-subheading text-muted">{{ data.email }}</h3>#}
+                        <h3 class="section-subheading text-muted">Here is your created list of desirable gifts!
+                            On this page you have all the power to edit it, as well as share your list with your
+                            friends by pressing "Share with Friends" button.</h3>
                     </div>
                 </div>
                 <div class="row text-center">
@@ -86,11 +106,11 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="d-inline-block">
-                                    <span class="d-inline-block fa-stack fa-4x inline-icon mr-2">
+                                    <span class="fa-stack fa-4x inline-icon mr-2">
                                         <i class="fa fa-circle fa-stack-2x text-primary"></i>
                                         <i class="fa fa-birthday-cake fa-stack-1x fa-inverse"></i>
                                     </span>
-                                    <h2>{{ data.title|capitalize }}</h2>
+                                    <h2 class="d-inline">{{ data.title|capitalize }}</h2>
                                     <p class="text-muted">{{ data.description }}</p>
                                 </div>
                             </div>
@@ -105,7 +125,6 @@
                                         <i class="fa fa-gift fa-stack-1x fa-inverse"></i>
                                     </div>
                                     <div class="d-inline-block">
-                                        {#<h4 class="service-heading">Gifts</h4>#}
                                         <p class="text-muted">{{ gift.title|capitalize }}</p>
                                     </div>
                                 </div>
@@ -116,6 +135,7 @@
                 <div class="col-lg-12 text-center edit-margin">
                     <a href="{{ path('edit', {'uuidadmin': data.uuidAdmin}) }}" type="submit"
                        class="btn btn-block btn-xl bg-dark border-dark text-uppercase">Edit</a>
+
                     {# Modal Trigger #}
                     <button type="button" class="btn btn-warning btn-block btn-xl text-uppercase" data-toggle="modal"
                             data-target="#modal">
@@ -139,42 +159,64 @@
                         <div class="col-lg-8 mx-auto">
 
                             <div class="modal-body">
-                                <h2 class="text-uppercase">Share With Friends</h2>
-                                <p class="item-intro text-muted"></p>
-                                <div class="form-group">
-                                    {#<textarea class="form-control" title="description" id="description"#}
-                                    {#rows="10">{{ data.description }}</textarea>#}
-                                    {#<p class="text-muted">{{ data.description }}</p>#}
-                                </div>
+                                <h2 class="text-uppercase mb-3">Share With Friends</h2>
+                                <h3 class="section-subheading text-muted" id="modal-subheading">To invite all of your
+                                    friends to the party in
+                                    on button click, just add your friends email addresses and press "Send" button!<br/>
+                                    You can save the link to the clipboard as well! Just press "Copy" button and paste the
+                                    copied link anywhere you want to save it, or share with anyone!</h3>
 
-                                <div class="input-group mb-3 modal-input">
-                                    <input type="text" class="form-control newEmail"
-                                           placeholder="Type your friend's email here."/>
-                                    <div class="input-group-append">
-                                        <button class="btn btn-xl bg-dark border-dark" id="addButton" type="button">Add
-                                            Email
-                                        </button>
-                                    </div>
+                                {{ form_start(form, {
+                                    'method': 'POST',
+                                    'attr': {
+                                        'novalidate': 'novalidate',
+                                        'action': path('giftlist-admin', {'uuidadmin': data.uuidAdmin, 'open_share': true})
+                                    }}) }}
+
+                                <div class="col-md-12 emailList">
+                                    <ul class="emails"
+                                        data-prototype="{{ form_widget(form.emails.vars.prototype)|e('html_attr') }}">
+                                        {% if form.emails.count == 0 %}
+                                            {{ form_widget(form.emails, {
+                                                'label': false
+                                            }) }}
+                                        {% endif %}
+                                        {% for email in form.emails %}
+                                            <li class="form-group">
+                                                <div class="input-group">
+                                                    {{ form_widget(email) }}
+                                                </div>
+                                            </li>
+                                            <li class="help-block text-danger">{{ form_errors(email) }}</li>
+                                        {% endfor %}
+                                    </ul>
                                 </div>
-                                <div class="input-group mb-3" id="emailList"></div>
 
                                 <div class="text-left"><p id="modal_p">And here is the link to your Gift List:</p></div>
 
                                 <div class="input-group mb-3">
-                                    <input type="text" class="form-control" name="uuid" id="link"
-                                           value="{{ url('giftlist-user', {'uuiduser': data.uuid}) }}"/>
+                                    {{ form_widget(form.url, {
+                                        'value': url('giftlist-user', {'uuiduser': data.uuid}),
+                                        'attr': {
+                                            'class': 'form-control',
+                                        }}) }}
+                                    <p class="help-block text-danger">{{ form_errors(form.url) }}</p>
                                     <div class="input-group-append">
                                         <a tabindex="0" type="button" class="btn btn-xl bg-dark border-dark"
-                                                data-toggle="popover" data-trigger="click" data-content="Copied to clipboard!"
-                                                id="copyToClipboard">Copy
+                                           data-toggle="popover" data-trigger="click"
+                                           data-content="Copied to clipboard!"
+                                           id="copyToClipboard">Copy
                                         </a>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <button id="sendMessageButton" class="btn btn-warning btn-block btn-xl text-uppercase"
-                                            type="submit">Send
-                                    </button>
+                                    {{ form_widget(form.send, {
+                                        'attr': {
+                                            'class': 'btn btn-warning btn-block btn-xl text-uppercase',
+                                        }
+                                    }) }}
                                 </div>
+                                {{ form_end(form) }}
                             </div>
                         </div>
                     </div>

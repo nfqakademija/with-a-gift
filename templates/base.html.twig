@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}{{ "Wish a Gift" }}{% endblock %}</title>
+  <title>{% block title %} &#x1F381 {{ "Wish a Gift" }}{% endblock %}</title>
   {% block stylesheets %}
     <!-- Custom fonts for this template -->
     {#<link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">#}
@@ -21,19 +21,20 @@
 <body id="page-top">
 {% block header %}{% endblock %}
 
-{# add flash message to all pages#}
-{% for label, messages in app.flashes %}
-  {% for message in messages %}
-    <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
-      <strong> {{ message }} </strong>
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-  {% endfor %}
-{% endfor %}
+{% block body %}
+  {# add flash message to all pages #}
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+          <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+            <strong> {{ message }} </strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+    {% endfor %}
+{% endblock %}
 
-{% block body %}{% endblock %}
 {% block footer %}{% endblock %}
 
 {% block javascripts %}

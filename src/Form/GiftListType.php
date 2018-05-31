@@ -4,9 +4,8 @@ namespace App\Form;
 
 use App\Entity\GiftList;
 use App\Entity\Gift;
-use function Sodium\add;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
@@ -28,7 +27,7 @@ class GiftListType extends AbstractType
             ->add('firstName', TextType::class,
                 array(
                     'required' => true,
-                    'constraints' => array(new NotBlank(), new Length(['max' => 100]))
+                    'constraints' => array(new NotBlank(), new Length(['max' => 255]))
                 ))
             ->add('email', EmailType::class, array(
                 'required' => true,
@@ -37,7 +36,7 @@ class GiftListType extends AbstractType
             ->add('title', TextType::class,
                 array(
                     'required' => true,
-                    'constraints' => array(new Length(array('min' => 3)), new NotBlank())
+                    'constraints' => array(new Length(array('min' => 3)), new NotBlank(), new Length(['max' => 255]))
                 ))
             ->add('description', TextareaType::class,
                 array(
@@ -45,6 +44,7 @@ class GiftListType extends AbstractType
                     'constraints' => array(new Length(array('min' => 3)), new NotBlank())
                 ))
             ->add('gifts', CollectionType::class, [
+                'label' => false,
                 'allow_add' => true,
                 'allow_delete' => true,
                 'by_reference' => false,
@@ -62,9 +62,11 @@ class GiftListType extends AbstractType
                     return null === $gift || empty($gift->getTitle());
                 },
                 'disabled' => !$options['allow_gift_editing'],
-            ])
+                ])
+            ->add('isPublic', CheckboxType::class, [
+                    'required' => false,
+                ])
             ->add('Save', SubmitType::class);
-
     }
 
     public function configureOptions(OptionsResolver $resolver)

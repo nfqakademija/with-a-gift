@@ -1,0 +1,33 @@
+# suite config
+suites:
+    acceptance:
+        actor: AcceptanceTester
+        path: .
+        modules:
+            enabled:
+                - WebDriver:
+                    url: http://nginx.symfony:8000
+                    host: selenium.symfony
+                    port: 4444
+                    browser: chrome
+                - \Helper\Acceptance
+                
+extensions:
+    enabled: [Codeception\Extension\RunFailed]
+
+params: 
+    - env
+
+gherkin: []    
+
+# additional paths
+paths:
+    tests: tests
+    output: tests/_output
+    data: tests/_data
+    support: tests/_support
+    envs: tests/_envs
+
+settings:
+    shuffle: false
+    lint: true

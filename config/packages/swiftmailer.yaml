@@ -1,0 +1,4 @@
+swiftmailer:
+    url: gmail://wishalotofgifts@gmail.com:qmslsxdbgbxxsrfj@localhost
+#    spool: { type: 'memory' }
+#    delivery_addresses: ['nerusha@gmail.com']

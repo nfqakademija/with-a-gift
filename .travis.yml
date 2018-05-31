@@ -4,9 +4,24 @@ php:
   - 7.2
 services:
   - mysql
+
+cache:
+  yarn: true
+  directories:
+  - $HOME/.composer/cache/files
+  - node_modules
+
+install:
+  - cp .env.dist .env
+  - echo "DATABASE_URL=mysql://root:p9iijKcfgENjBWDYgSH7@mysql.symfony:3306/gifts" >> .env # Last parameter is used. Updated to Travis login
+  - composer install
+
 before_script:
 # Get the token from github and put it in travis repo under GITHUB_COMPOSER_AUTH ENV variable, then uncomment line below.
 #  - composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH
   - composer install --no-interaction --prefer-dist
+  - yarn
+  - yarn run encore production
 script:
   - vendor/bin/phpcs -p --standard=PSR2 --extensions=php ./src
+  - bin/phpunit

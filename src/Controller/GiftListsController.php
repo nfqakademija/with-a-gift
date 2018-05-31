@@ -4,22 +4,25 @@ namespace App\Controller;
 
 use App\Entity\GiftList;
 use App\Entity\Gift;
+use App\Form\EmailsType;
+use App\Service\ReservedGiftCookieResolver;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Cookie;
 use Ramsey\Uuid\Uuid;
+
 
 class GiftListsController extends Controller
 {
+    public const RESERVED_GIFTS_COOKIE = 'reserved_gifts';
+
     public function uuidUser(string $uuiduser)
     {
         $getUuidUser = $this->getDoctrine()
             ->getRepository(GiftList::class)
             ->findOneBy(['uuid' => $uuiduser]);
-//        var_dump($getUuidUser);
         return $getUuidUser;
     }
 
@@ -37,21 +40,43 @@ class GiftListsController extends Controller
 
         if (!$giftListEntity) {
             throw $this->createNotFoundException();
-//            return $this->redirectToRoute('home');
         }
+
+        $form = $this->createForm(EmailsType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $data['url'] = $form['url']->getData();
+            $data['subject'] = 'Gifts';
+            $data['admin'] = $giftListEntity;
+            $data['emails'] = $form['emails']->getData();
+
+            $this->sendToAdmin($giftListEntity->getEmail(), $data);
+
+
+            foreach ($data['emails'] as $email) {
+                // var_dump($email);
+                $this->shareWithFriends($email, $data);
+
+            }
+            return $this->redirectToRoute('giftlist-admin', ['uuidadmin' => $uuidadmin]);
+
+        }
+
         return $this->render('giftlist/admin.html.twig',
             array(
                 'data' => $giftListEntity,
+                'form' => $form->createView()
             ));
     }
 
     /**
      * @Route("/giftlist/{uuiduser}", name="giftlist-user")
-     * @param Request $request
      * @param string $uuiduser
      * @return Response
      */
-    public function user(Request $request, string $uuiduser)
+    public function user(string $uuiduser)
     {
         $giftListEntity = $this->uuidUser($uuiduser);
         if (!$giftListEntity) {
@@ -59,12 +84,9 @@ class GiftListsController extends Controller
             return $this->redirectToRoute('home');
         }
 
-        $httpHostuser = $request->getHttpHost();
-
         return $this->render('giftlist/user.html.twig',
             array(
-                'data' => $giftListEntity,
-//                'httpHost' => $httpHostuser
+                'data' => $giftListEntity
 
             ));
     }
@@ -81,37 +103,38 @@ class GiftListsController extends Controller
             return $this->redirectToRoute('home');
         }
 
-        $this->getDoctrine()
-            ->getRepository(GiftList::class)
-            ->findOneBy(['uuid' => $uuiduser]);
-
         $entityManager = $this->getDoctrine()->getManager();
-        $active = $entityManager->getRepository(Gift::class)->find($id);
+        $active = $entityManager->getRepository(Gift::class)->findOneBy(['id' => $id, 'reservedAt' => null]);
         if (!$active) {
             throw $this->createNotFoundException(
                 'No product found for id ' . $id
             );
         }
+        if ($active) {
+            $this->addFlash(
+                'warning', 'Be careful and think twice! You have 10 minutes to undo your reservation.'
+            );
+        }
         $reservationToken = Uuid::uuid4()->toString();
-        $response = new Response();
-        $json = '{
-            "'.$id.'": [ {
-              "reservationToken":"'.$reservationToken.'"
-            }]
-        }';
+        $response = new RedirectResponse($this->generateUrl('giftlist-user', ['uuiduser' => $uuiduser]));
 
-        $cookie = new Cookie($id, $json, strtotime('now + 10 minutes'), '', null, false, false);
+        $cookie = $request->cookies->get(self::RESERVED_GIFTS_COOKIE);
+
+        $giftList = $active->getGiftList();
+
+        if (ReservedGiftCookieResolver::hasReservedGifts($cookie, $giftList)) {
+            $this->addFlash(
+                'warning', 'You have already reserved more than one gift. Leave some for others!'
+            );
+        }
+        $cookie = ReservedGiftCookieResolver::addGift($cookie, $id, $reservationToken);
         $response->headers->setCookie($cookie);
-        $response->sendHeaders();
+
         $active->setReservedAt(new \DateTime());
-        $active->setReservationToken(Uuid::uuid4()->toString());
+        $active->setReservationToken($reservationToken);
         $entityManager->flush();
 
-        return $this->redirectToRoute('giftlist-user',
-            array(
-                'uuiduser' => $uuiduser,
-               // 'cookie' => json_decode($request->cookies->get($id), true)
-            ));
+        return $response;
     }
 
     /**
@@ -120,15 +143,11 @@ class GiftListsController extends Controller
      * @param $uuiduser
      * @return \Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function unreserve($id, $uuiduser)
+    public function unreserve(Request $request, $id, $uuiduser)
     {
         if (!$this->uuidUser($uuiduser)) {
             return $this->redirectToRoute('home');
         }
-
-        $this->getDoctrine()
-            ->getRepository(GiftList::class)
-            ->findOneBy(['uuid' => $uuiduser]);
 
         $entityManager = $this->getDoctrine()->getManager();
         $active = $entityManager->getRepository(Gift::class)->find($id);
@@ -138,14 +157,53 @@ class GiftListsController extends Controller
             );
         }
 
-        $active->setReservedAt(Null);
-        $active->setReservationToken(Null);
+        $response = new RedirectResponse($this->generateUrl('giftlist-user', ['uuiduser' => $uuiduser]));
+
+        $cookie = $request->cookies->get(self::RESERVED_GIFTS_COOKIE);
+        $cookie = ReservedGiftCookieResolver::removeGift($cookie, $id);
+
+        $response->headers->setCookie($cookie);
+        $active->setReservedAt(null);
+        $active->setReservationToken(null);
         $entityManager->flush();
 
-        return $this->redirectToRoute('giftlist-user',
-            array(
-                'uuiduser' => $uuiduser
-            ));
+        $this->addFlash(
+            'success', 'Your reservation has been canceled! Pick another gift!'
+        );
+
+        return $response;
+    }
+
+    public function shareWithFriends($emails, $data)
+    {
+        $message = (new \Swift_Message($data['subject']))
+            ->setFrom('nejuras@gmail.com')
+            ->setTo($emails)
+            ->setBody(
+                $this->renderView(
+                    'emails/sharewithfriends.html.twig',
+                    array('data' => $data)
+                ),
+                'text/html'
+            );
+
+        $this->get('mailer')->send($message);
+    }
+
+    public function sendToAdmin($emails, $data)
+    {
+        $message = (new \Swift_Message($data['subject']))
+            ->setFrom('nejuras@gmail.com')
+            ->setTo($emails)
+            ->setBody(
+                $this->renderView(
+                    'emails/sendtoadmin.html.twig',
+                    array('data' => $data)
+                ),
+                'text/html'
+            );
+
+        $this->get('mailer')->send($message);
     }
 
 }

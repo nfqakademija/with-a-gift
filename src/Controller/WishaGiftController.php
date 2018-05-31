@@ -22,7 +22,9 @@ class WishaGiftController extends Controller
         // build the form
         $giftList = new GiftList();
         $giftList->addGift(new Gift());
-        $form = $this->createForm(GiftListType::class/*, $giftList*/);
+
+
+        $form = $this->createForm(GiftListType::class, $giftList);
 
         // handle the submit (will only happen on POST)
         $form->handleRequest($request);
@@ -31,7 +33,6 @@ class WishaGiftController extends Controller
              * @var $giftList GiftList
              */
             $giftList = $form->getData();
-
             // save data
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($giftList);
@@ -61,6 +62,10 @@ class WishaGiftController extends Controller
         $giftListEntity = $this->getDoctrine()
             ->getRepository(GiftList::class)
             ->findOneBy(['uuidAdmin' => $uuidadmin]);
+
+        if (null === $giftListEntity) {
+            throw $this->createNotFoundException();
+        }
 
         // build the form
         $form = $this->createForm(GiftListType::class, $giftListEntity, ['allow_gift_editing' => $this->isEditingAllowed($giftListEntity)]);
