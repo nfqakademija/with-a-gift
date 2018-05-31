@@ -69,7 +69,7 @@ docker-compose run --rm frontend.symfony
 
 * Pirmą kartą (įsirašome JavaScript bilbiotekas)
 ```
-npm install --no-save
+yarn install
 ```
 
 * Jei pakeitimai neatsinaujina (arba klaidos dėl `build/css` ar `build/js`):
@@ -93,6 +93,11 @@ composer install
 ```
 bin/console doctrine:database:create
 bin/console doctrine:schema:update --force
+```
+
+* Įkelti mėginio duomenis
+```
+bin/console doctrine:fixtures:load
 ```
 
 * Jei pakeitimai neatsinaujina:

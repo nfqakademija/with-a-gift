@@ -39,3 +39,7 @@ npm-debug.log
 /.deploy/*.retry
 ###< Old symfony and common infrastructure ###
 .idea/
+###> symfony/phpunit-bridge ###
+.phpunit
+/phpunit.xml
+###< symfony/phpunit-bridge ###

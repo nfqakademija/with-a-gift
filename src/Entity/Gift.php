@@ -13,7 +13,7 @@ class Gift
      * @var \Ramsey\Uuid\UuidInterface
      *
      * @ORM\Id()
-     * @ORM\Column(type="uuid_binary", unique=true)
+     * @ORM\Column(type="uuid", unique=true)
      * @ORM\GeneratedValue(strategy="CUSTOM")
      * @ORM\CustomIdGenerator(class="Ramsey\Uuid\Doctrine\UuidGenerator")
      */
@@ -40,6 +40,11 @@ class Gift
     private $createdAt;
 
     /**
+     * @ORM\Column(type="boolean")
+     */
+    private $reservable = true;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\GiftList", inversedBy="gifts")
      * @ORM\JoinColumn(name="gift_list_id", referencedColumnName="id", nullable=false)
      */
@@ -60,7 +65,6 @@ class Gift
     public function setGiftList(?GiftList $giftList): self
     {
         $this->giftList = $giftList;
-
         return $this;
     }
 
@@ -122,30 +126,19 @@ class Gift
         $this->reservationToken = $reservationToken;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getReservable()
+    {
+        return $this->reservable;
+    }
 
-//    public function getGift(): ?string
-//    {
-//        return $this->gift;
-//    }
-//
-//    public function setGift(string $gift): self
-//    {
-//        $this->gift = $gift;
-//
-//        return $this;
-//    }
-//
-//    public function getActive(): ?int
-//    {
-//        return $this->active;
-//    }
-//
-//    public function setActive(int $active): self
-//    {
-//        $this->active = $active;
-//
-//        return $this;
-//    }
-
-
+    /**
+     * @param mixed $reservable
+     */
+    public function setReservable($reservable): void
+    {
+        $this->reservable = $reservable;
+    }
 }

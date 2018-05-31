@@ -31,9 +31,8 @@
 
         // count the current form inputs we have (e.g. 2), use that as the new
         // index when inserting a new item (e.g. 2)
-        let lastIndex = $collectionHolder.find(':input').toArray()
-          .map(i => $(i).prop('name') ? parseInt($(i).prop('name').replace(/[^0-9]+/, '')) : 0)
-          .reduce((a, b) => Math.max(a, b));
+        let lastIndex = $collectionHolder.find(':input[type="text"]').toArray()
+          .map(i => $(i).prop('name') ? parseInt($(i).prop('name').replace(/[^0-9]+/, '')) : 0);
 
         $collectionHolder.data('index', ++lastIndex);
 
@@ -43,7 +42,6 @@
 
           // add a new tag form (see next code block)
           addTagForm($collectionHolder, $newLinkLi);
-
 
         });
       });
@@ -56,11 +54,7 @@
         let index = $collectionHolder.data('index');
 
         let newForm = prototype;
-        // You need this only if you didn't set 'label' => false in your tags field in TaskType
-        // Replace '__name__label__' in the prototype's HTML to
-        // instead be a number based on how many items we have
-        // newForm = newForm.replace(/__name__label__/g, index);
-
+        // Need this because we set 'label' => false in GiftType
         // Replace '__name__' in the prototype's HTML to
         // instead be a number based on how many items we have
         newForm = newForm.replace(/__name__/g, index);
@@ -73,16 +67,22 @@
 
         // Display the form in the page in an li, before the "Add a tag" link li
         let $newFormLi = $('<li class="form-group"></li>').prepend($newForm);
-        $newLinkLi.after($newFormLi);
 
         // add a delete link to the new form
         addTagFormDeleteLink($newFormLi);
+
+        $newLinkLi.after($newFormLi);
+
+
+        // call this after the new form element has been added to DOM,
+        // because AmazonAutocomplete searches for CSS selector inside document
+        addAutocomplete($newFormLi);
 
       }
 
       function addTagFormDeleteLink($tagFormLi) {
         let $removeFormA = $('<div class="input-group-append">\n' +
-          '<button class="btn btn-danger btn-lg" type="button"><i class="fa fa-times"></i></button>\n' +
+          '<button class="btn btn-danger btn-xl delete-button" type="button"><i class="fa fa-times"></i></button>\n' +
           '</div>');
         $tagFormLi.find('.input-group').append($removeFormA);
 
@@ -95,6 +95,33 @@
         });
       }
 
+      // add Autocomplete
+      function addAutocomplete($newLinkLi) {
+        console.log($newLinkLi);
+        let id = `#${$newLinkLi.find(':input[type="text"]').prop('id').toString()}`;
+        console.log(id);
+
+        // Default AmazonAutocomplete configuration
+        let autoCompleteConfig = {
+          'selector': id,
+          delay: 150,
+          showWords: true,
+          hideOnblur: true,
+        };
+
+        let searchInput = new AmazonAutocomplete(autoCompleteConfig);
+        searchInput.onSelectedWord(word => {
+          searchInput._input.value = word;
+
+          // Log the selected word to the console
+          console.log(`selected choice: ${word}...`, searchInput);
+
+          // Loose focus to close/hide autocomplete
+          $(searchInput._input).parent().find('.ac__container').toggle();
+        });
+
+      }
+
     </script>
 {% endblock %}
 
@@ -105,7 +132,10 @@
             <div class="row">
                 <div class="col-lg-12 text-center">
                     <h2 class="section-heading text-uppercase">Edit your Gift List</h2>
-                    <h3 class="section-subheading text-muted"></h3>
+                    <h3 class="section-subheading text-white">On this page you can edit your gift list by adding new
+                        gifts and deleting other, in case you suddenly desire something else.<br /> But bring to notice, that
+                        you will not be able to delete the gift from the list, upon condition that your friend has already reserved
+                        it for you.</h3>
                 </div>
             </div>
             <div class="row">
@@ -151,21 +181,29 @@
                                         }}) }}
                                     <p class="help-block text-danger">{{ form_errors(form.description) }}</p>
                                 </div>
+                                <div class="form-group">
+                                    {{ form_widget(form.isPublic) }}
+                                    {{ form_label(form.isPublic, 'Make Your Gift List Public', {
+                                        'label_attr': {
+                                            'class': 'text-white'
+                                        }}) }}
+                                </div>
                             </div>
                         </div>
-
                         <div class="col-md-6">
                             <ul class="gifts"
-                                data-prototype="{{ form_widget(form.gifts.vars.prototype.title)|e('html_attr') }}">
+                                data-prototype="
+                                    {{ form_widget(form.gifts.vars.prototype.reservable)|e('html_attr') }}
+                                    {{ form_widget(form.gifts.vars.prototype.title)|e('html_attr') }}">
                                 {% for gift in form.gifts %}
                                     <li class="form-group">
                                         <div class="input-group">
+                                            {{ form_widget(gift.reservable) }}
                                             {{ form_widget(gift.title) }}
                                         </div>
                                     </li>
                                 {% endfor %}
                             </ul>
-
                         </div>
 
                         <div class="clearfix"></div>
@@ -177,8 +215,7 @@
                                 {{ form_widget(form.Save, {
                                     'attr': {
                                         'class': 'btn btn-warning  btn-block btn-xl text-uppercase',
-                                    }})
-                                }}
+                                    }}) }}
                             </div>
                         </div>
                     </div>

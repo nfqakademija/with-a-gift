@@ -7,7 +7,7 @@
 
 
 {% block body %}
-    <!-- Header -->
+    {# Header #}
     <header class="masthead">
         <div class="container">
             <div class="intro-text">
@@ -15,15 +15,44 @@
                 <div class="intro-lead-in">Think of event. Create a Gift list. Share it with friends. And get awesome
                     presents!
                 </div>
-                <a class="btn btn-primary btn-xl text-uppercase js-scroll-trigger" href="{{ path('create') }}">
+                <a class="btn btn-warning btn-xl text-uppercase js-scroll-trigger" href="{{ path('create') }}">
                     Create a Gift List
                 </a>
             </div>
         </div>
     </header>
+
+    {# Section for public Gift Lists #}
+    <section id="services">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 text-center">
+                    <h2 class="section-heading">Public Gift Lists</h2>
+                    <h3 class="section-subheading text-muted">Can not decide on the gifts? These public lists of gifts
+                        will help you make the right choice!</h3>
+                </div>
+            </div>
+            <div class="row text-center">
+                {% for giftList in data %}
+                    <div class="col-md-4">
+                        <span class="fa-stack fa-4x">
+                            <i class="fa fa-circle fa-stack-2x text-primary"></i>
+                            <i class="fa fa-birthday-cake fa-stack-1x fa-inverse"></i>
+                        </span>
+                        <h4 class="service-heading">{{ giftList.title }}</h4>
+                        <ul>
+                            {% for gift in giftList.gifts %}
+                                <li>{{ gift.title }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
 {% endblock %}
 
 {% block footer %}
-    <!-- Footer -->
+    {# Footer #}
     {{ include('footer/footer.html.twig') }}
 {% endblock %}

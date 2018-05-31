@@ -40,12 +40,12 @@ services:
       - 127.0.0.1:3307:3306 # Connect to it via -h127.0.0.1 --port=3307
 
   phpmyadmin:
-      container_name: phpmyadmin.symfony
-      image: phpmyadmin/phpmyadmin:latest
-      links:
-        - mysql.symfony:db
-      ports:
-        - 127.0.0.1:32773:80
+    container_name: phpmyadmin.symfony
+    image: phpmyadmin/phpmyadmin:latest
+    links:
+      - mysql.symfony:db
+    ports:
+      - 127.0.0.1:32773:80
 #      environment:
 #        - MYSQL_USERNAME=$MYSQL_USERNAME
 #        - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD

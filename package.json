@@ -16,6 +16,7 @@
     "build": "encore production"
   },
   "dependencies": {
+    "amazon-autocomplete": "^1.0.1",
     "font-awesome": "^4.7.0",
     "startbootstrap-agency": "^4.0.0-beta"
   },

@@ -4,9 +4,8 @@ namespace App\Form;
 
 use App\Entity\GiftList;
 use App\Entity\Gift;
-use function Sodium\add;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
@@ -18,33 +17,30 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 
-
 class GiftListType extends AbstractType
 {
 
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('firstName', TextType::class,
-                array(
-                    'required' => true,
-                    'constraints' => array(new NotBlank(), new Length(['max' => 100]))
-                ))
-            ->add('email', EmailType::class, array(
+            ->add('firstName', TextType::class, [
                 'required' => true,
-                'constraints' => array(new Email(), new NotBlank())
-            ))
-            ->add('title', TextType::class,
-                array(
-                    'required' => true,
-                    'constraints' => array(new Length(array('min' => 3)), new NotBlank())
-                ))
-            ->add('description', TextareaType::class,
-                array(
-                    'required' => true,
-                    'constraints' => array(new Length(array('min' => 3)), new NotBlank())
-                ))
+                'constraints' => [new NotBlank(), new Length(['max' => 255])]
+            ])
+            ->add('email', EmailType::class, [
+                'required' => true,
+                'constraints' => [new Email(), new NotBlank()]
+            ])
+            ->add('title', TextType::class, [
+                'required' => true,
+                'constraints' => [new Length(['min' => 3]), new NotBlank(), new Length(['max' => 255])]
+            ])
+            ->add('description', TextareaType::class, [
+                'required' => true,
+                'constraints' => [new Length(['min' => 3]), new NotBlank()]
+            ])
             ->add('gifts', CollectionType::class, [
+                'label' => false,
                 'allow_add' => true,
                 'allow_delete' => true,
                 'by_reference' => false,
@@ -63,15 +59,17 @@ class GiftListType extends AbstractType
                 },
                 'disabled' => !$options['allow_gift_editing'],
             ])
+            ->add('isPublic', CheckboxType::class, [
+                'required' => false,
+            ])
             ->add('Save', SubmitType::class);
-
     }
 
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(array(
+        $resolver->setDefaults([
             'data_class' => GiftList::class,
             'allow_gift_editing' => true,
-        ));
+        ]);
     }
 }

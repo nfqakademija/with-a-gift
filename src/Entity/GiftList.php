@@ -16,24 +16,24 @@ class GiftList
      * @var \Ramsey\Uuid\UuidInterface
      *
      * @ORM\Id()
-     * @ORM\Column(type="uuid_binary", unique=true)
+     * @ORM\Column(type="uuid", unique=true)
      * @ORM\GeneratedValue(strategy="CUSTOM")
      * @ORM\CustomIdGenerator(class="Ramsey\Uuid\Doctrine\UuidGenerator")
      */
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=101)
+     * @ORM\Column(type="string")
      */
     private $firstName;
 
     /**
-     * @ORM\Column(type="string", length=101)
+     * @ORM\Column(type="string")
      */
     private $email;
 
     /**
-     * @ORM\Column(type="string", length=200)
+     * @ORM\Column(type="string")
      */
     private $title;
 
@@ -70,6 +70,10 @@ class GiftList
      */
     private $createdAt;
 
+    /**
+     * @ORM\Column(type="boolean")
+     */
+    private $isPublic;
 
     public function __construct()
     {
@@ -77,6 +81,7 @@ class GiftList
         $this->gifts = new ArrayCollection();
         $this->uuid = \Ramsey\Uuid\Uuid::uuid4();
         $this->uuidAdmin = \Ramsey\Uuid\Uuid::uuid4();
+        $this->isPublic = false;
     }
 
     public function getId()
@@ -120,6 +125,9 @@ class GiftList
         return $this;
     }
 
+    /**
+     * @return null|string
+     */
     public function getDescription(): ?string
     {
         return $this->description;
@@ -171,5 +179,21 @@ class GiftList
             $this->gifts->removeElement($gift);
             $gift->setGiftList(null);
         }
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getIsPublic()
+    {
+        return $this->isPublic;
+    }
+
+    /**
+     * @param mixed $isPublic
+     */
+    public function setIsPublic($isPublic): void
+    {
+        $this->isPublic = $isPublic;
     }
 }

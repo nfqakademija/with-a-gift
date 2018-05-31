@@ -13,10 +13,21 @@
     {{ include('navigation/navigation.html.twig') }}
     <section id="services">
         <div class="container">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label }} flash-{{ label }} alert-dismissible fade show text-center"
+                         role="alert">
+                        <strong> {{ message }} </strong>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
             <div class="row">
                 <div class="col-lg-12 text-center user-giftlist">
                     <h2 class="section-heading text-uppercase">Gift List for {{ data.firstname }}</h2>
-                    {#<h3 class="section-subheading text-muted">{{ data.email }}</h3>#}
                 </div>
             </div>
             <div class="row text-center">
@@ -28,7 +39,7 @@
                                     <i class="fa fa-circle fa-stack-2x text-primary"></i>
                                     <i class="fa fa-birthday-cake fa-stack-1x fa-inverse"></i>
                                 </span>
-                                <h2>{{ data.title|capitalize }}</h2>
+                                <h2 class="d-inline">{{ data.title|capitalize }}</h2>
                                 <p class="text-muted">{{ data.description }}</p>
                             </div>
                         </div>
@@ -36,35 +47,44 @@
                 </div>
                 <div class="col-md-6 text-left">
                     {% for gift in data.gifts %}
-                    <div class="col-md-12">
+                        {#{{ dump(isGiftReservedByMe(app.request.cookies.get('reserved_gifts')))}}#}
+                        <div class="col-md-12">
 
-                        <div class="d-inline-block fa-stack fa-2x">
-                            <i class="fa fa-circle fa-stack-2x text-primary"></i>
-                            <i class="fa fa-gift fa-stack-1x fa-inverse"></i>
-                        </div>
+                            <div class="d-inline-block fa-stack fa-2x">
+                                <i class="fa fa-circle fa-stack-2x text-primary"></i>
+                                <i class="fa fa-gift fa-stack-1x fa-inverse"></i>
+                            </div>
 
-                        <div class="d-inline-block">
-                            <p class="text-muted">{{ gift.title|capitalize }}</p>
-                        </div>
+                            <div class="d-inline-block">
+                                <p class="text-muted">{{ gift.title|capitalize }}</p>
+                            </div>
+                            {% if gift.reservable %}
+                                {% if gift.reservationToken is null %}
+                                    <div class="d-inline-block float-right">
+                                        <a href="{{ path('gift-reserve', {'uuiduser': data.uuid, 'id':gift.id}) }}"
+                                           class="btn btn-lg btn-dark border-dark">Reserve</a>
+                                    </div>
+                                {% endif %}
 
-                        {% if gift.reservationToken is null %}
-                        <div class="d-inline-block float-right">
-                            <a href="{{ path('gift-reserve', {'uuiduser': data.uuid, 'id':gift.id}) }}"
-                               class="btn btn-lg btn-dark border-dark">Reserve
-                            </a>
-                        </div>
-                        {% endif %}
-
-                        {% if gift.reservationToken is not null %}
-                        <div class="float-right">
-                            <label class="form-check-label" for="reserved">Reserved</label>
-                            {% if app.request.cookies.has(gift.id|trim) %}
-                                <a href="{{ path('gift-unreserve', {'uuiduser': data.uuid, 'id':gift.id}) }}"
-                                   class="btn btn-lg btn-dark border-dark">Undo</a>
+                                {% if gift.reservationToken is not null %}
+                                    <div class="float-right">
+                                        {% if isGiftReservedByMe(gift, app.request.cookies.get('reserved_gifts')) %}
+                                            <label class="form-check-label" for="reserved">Reserved By Me</label>
+                                        {% else %}
+                                            <label class="form-check-label" for="reserved">Reserved</label>
+                                        {% endif %}
+                                        {% if isGiftReservedForTime(gift, app.request.cookies.get('reserved_gifts')) %}
+                                            <a href="{{ path('gift-unreserve', {'uuiduser': data.uuid, 'id':gift.id}) }}"
+                                               class="btn btn-lg bg-dark border-dark undo-button">Undo</a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="d-inline-block float-right">
+                                    Your can buy a gift without reservation
+                                </div>
                             {% endif %}
                         </div>
-                        {% endif %}
-                    </div>
                     {% endfor %}
                 </div>
             </div>

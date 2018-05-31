@@ -17,7 +17,6 @@ Encore
 
     .addStyleEntry('css/app', './assets/css/app.scss')
     .addStyleEntry('css/startbootstrap-agency', './assets/css/startbootstrap-agency.scss')
-    // .addStyleEntry('css/agency.min', './assets/css/agency.min.css')
 
     // uncomment if you use Sass/SCSS files
     .enableSassLoader()
